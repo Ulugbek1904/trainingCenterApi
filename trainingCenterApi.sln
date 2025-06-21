@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trainingCenter.Infrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trainingCenter.Services", "trainingCenter.Services\trainingCenter.Services.csproj", "{B1C2ACB2-6726-4D45-84AA-97370EEC9BE7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trainingCenterApi.Common", "trainingCenterApi.Common\trainingCenterApi.Common.csproj", "{A031D5B6-C2B5-4E0F-A8B8-D17CCF83CF62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{B1C2ACB2-6726-4D45-84AA-97370EEC9BE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1C2ACB2-6726-4D45-84AA-97370EEC9BE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1C2ACB2-6726-4D45-84AA-97370EEC9BE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A031D5B6-C2B5-4E0F-A8B8-D17CCF83CF62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A031D5B6-C2B5-4E0F-A8B8-D17CCF83CF62}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A031D5B6-C2B5-4E0F-A8B8-D17CCF83CF62}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A031D5B6-C2B5-4E0F-A8B8-D17CCF83CF62}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
