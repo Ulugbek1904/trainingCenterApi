@@ -18,8 +18,9 @@ public class Course
     public int MaxStudents { get; set; } 
     public string Schedule { get; set; } = string.Empty; 
     public bool IsActive { get; set; } 
-    public List<StudentCourse> Students { get; set; } = new List<StudentCourse>(); 
+    public List<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>(); 
     public int? CategoryId { get; set; }
+    public Category Category { get; set; } 
     public string Materials { get; set; } = string.Empty;
     public CourseLevel Level { get; set; }
 }

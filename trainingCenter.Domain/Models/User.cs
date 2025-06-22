@@ -22,4 +22,7 @@ public class User
     public string ProfilePictureUrl { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string LanguagePreference { get; set; } = string.Empty;
+    public string? PasswordResetOtp { get; set; }
+    public DateTime? OtpExpiration { get; set; }
+    public List<RefreshToken> RefreshTokens { get; set; }
 }
