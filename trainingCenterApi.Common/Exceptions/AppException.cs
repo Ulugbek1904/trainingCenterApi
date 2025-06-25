@@ -1,35 +1,75 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
 
-namespace trainingCenterApi.Common.Exceptions;
-
-public class AppException : Exception
+namespace trainingCenter.Common.Exceptions
 {
-    [JsonPropertyName("statusCode")]
-    public int StatusCode { get; }
-
-    [JsonPropertyName("type")]
-    public string? Type { get; }
-
-    [JsonPropertyName("message")]
-    public override string Message => base.Message;
-
-    public AppException(string message, int statusCode, string? type = null, Exception? inner = null)
-        : base(message, inner)
+    public abstract class AppException : Exception
     {
-        if (!IsValidStatusCode(statusCode))
-            throw new ArgumentException("Invalid HTTP status code", nameof(statusCode));
-        StatusCode = statusCode;
-        Type = type ?? $"https://httpstatuses.com/{statusCode}";
+        public int StatusCode { get; }
+        public string Type { get; }
+
+        protected AppException(string message, int statusCode, string type)
+            : base(message)
+        {
+            StatusCode = statusCode;
+            Type = type ?? $"https://httpstatuses.com/{statusCode}";
+        }
+
+        protected AppException(string message, Exception innerException, int statusCode, string type)
+            : base(message, innerException)
+        {
+            StatusCode = statusCode;
+            Type = type ?? $"https://httpstatuses.com/{statusCode}";
+        }
     }
 
-    private bool IsValidStatusCode(int code) => code >= 400 && code < 600;
-}
+    public class NotFoundException : AppException
+    {
+        public NotFoundException(string message)
+            : base(message, 404, "https://httpstatuses.com/404")
+        {
+        }
+    }
 
-public static class ErrorTypes
-{
-    public const string UserNotFound = "UserNotFound";
-    public const string CourseFull = "CourseFull";
-    public const string InvalidPayment = "InvalidPayment";
-    public const string StudentNotEnrolled = "StudentNotEnrolled";
-    public const string DuplicateEntry = "DuplicateEntry";
+    public class EmailException : AppException
+    {
+        public EmailException(string message, Exception innerException)
+            : base(message, innerException, 500, "https://httpstatuses.com/500")
+        {
+        }
+    }
+
+    public class TokenValidationException : AppException
+    {
+        public TokenValidationException(string message, Exception innerException)
+            : base(message, innerException, 401, "https://httpstatuses.com/401")
+        {
+        }
+    }
+    public class ValidationException : AppException
+    {
+        public ValidationException(string message)
+            : base(message, 400, "https://httpstatuses.com/400")
+        {
+        }
+    }
+
+    public class ConfigurationException : AppException
+    {
+        public ConfigurationException(string message)
+            : base(message, 500, "https://httpstatuses.com/500")
+        {
+        }
+    }
+
+    public class TelegramException : AppException
+    {
+        public TelegramException(string message, Exception innerException)
+            : base(message, innerException, 500, "https://httpstatuses.com/500")
+        {
+        }
+        public TelegramException(string message)
+            : base(message, 500, "https://httpstatuses.com/500")
+        {
+        }
+    }
 }

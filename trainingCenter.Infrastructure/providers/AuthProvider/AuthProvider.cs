@@ -4,86 +4,94 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Models;
 
-namespace trainingCenter.Infrastructure.providers.AuthProvider;
-
-public class AuthProvider : IAuthProvider
+namespace trainingCenter.Infrastructure.providers.AuthProvider
 {
-    private readonly IConfiguration configuration;
-
-    public AuthProvider(IConfiguration configuration)
+    public class AuthProvider : IAuthProvider
     {
-        this.configuration = configuration;
-    }
+        private readonly IConfiguration configuration;
 
-    public string GenerateJwtToken(User user)
-    {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
-        var crediantials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        public AuthProvider(IConfiguration configuration)
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role.ToString()),
-            new Claim("FullName", user.FullName),
-            new Claim("Email", user.Email),
-            new Claim("PhoneNumber", user.PhoneNumber),
-            new Claim("TelegramId", user.TelegramId),
-            new Claim("ProfilePictureUrl", user.ProfilePictureUrl),
-            new Claim("Address", user.Address),
-            new Claim("LanguagePreference", user.LanguagePreference)
-        };
+            this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
 
-        var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(Convert.ToDouble(configuration["Jwt:AccessTokenExpiration"])),
-            signingCredentials: crediantials
-        );
-
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        return tokenHandler.WriteToken(token);
-    }
-
-    public string GenerateRefreshToken()
-    {
-        var randomNumber = new byte[32];
-
-        using var rng = RandomNumberGenerator.Create();
-
-        rng.GetBytes(randomNumber);
-
-        return Convert.ToBase64String(randomNumber);
-    }
-
-    public TokenValidationParameters GetValidationParameters()
-    {
-        return new TokenValidationParameters
+        public string GenerateJwtToken(User user)
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = configuration["Jwt:Issuer"],
-            ValidAudience = configuration["Jwt:Audience"],
+            if (user == null)
+                throw new ValidationException("User cannot be null.");
 
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding
-            .UTF8.GetBytes(configuration["Jwt:Key"])),
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            ClockSkew = TimeSpan.Zero
-        };
-    }
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role.ToString()),
+                new Claim("FullName", user.FullName),
+                new Claim("Email", user.Email),
+                new Claim("PhoneNumber", user.PhoneNumber),
+                new Claim("TelegramId", user.TelegramId),
+                new Claim("ProfilePictureUrl", user.ProfilePictureUrl),
+                new Claim("Address", user.Address),
+                new Claim("LanguagePreference", user.LanguagePreference)
+            };
 
-    public ClaimsPrincipal ValidateToken(string token)
-    {
-        var tokenHandler = new JwtSecurityTokenHandler();
+            var token = new JwtSecurityToken(
+                issuer: configuration["Jwt:Issuer"],
+                audience: configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(configuration["Jwt:AccessTokenExpiration"])),
+                signingCredentials: credentials
+            );
 
-        var validationParameters = GetValidationParameters();
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
 
-        return tokenHandler.ValidateToken(token, validationParameters, out _);
+        public (string Token, DateTime Expiration) GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            var token = Convert.ToBase64String(randomNumber);
+            var expiration = DateTime.UtcNow.AddDays(Convert.ToDouble(configuration["Jwt:RefreshTokenExpiration"]));
+
+            return (token, expiration);
+        }
+
+        public TokenValidationParameters GetValidationParameters()
+        {
+            return new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = configuration["Jwt:Issuer"],
+                ValidAudience = configuration["Jwt:Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
+                ClockSkew = TimeSpan.Zero
+            };
+        }
+
+        public ClaimsPrincipal ValidateToken(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ValidationException("Token cannot be empty.");
+
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var validationParameters = GetValidationParameters();
+                return tokenHandler.ValidateToken(token, validationParameters, out _);
+            }
+            catch (SecurityTokenException ex)
+            {
+                throw new TokenValidationException("Invalid token.", ex);
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Enums;
 using trainingCenter.Domain.Models;
 
@@ -9,7 +10,8 @@ public class StorageBroker : DbContext, IStorageBroker
 {
     private readonly IConfiguration configuration;
 
-    public StorageBroker(IConfiguration configuration)
+    public StorageBroker(DbContextOptions<StorageBroker> options, IConfiguration configuration)
+        : base(options)
     {
         this.configuration = configuration;
     }
@@ -32,7 +34,8 @@ public class StorageBroker : DbContext, IStorageBroker
         => await this.Set<T>().FindAsync(keyValues);
 
     public async ValueTask<T> SelectByIdAsync<T>(Guid id) where T : class
-        => await this.Set<T>().FindAsync(id) ?? throw new InvalidOperationException($"Entity with ID {id} not found.");
+        => await this.Set<T>().FindAsync(id) ?? 
+        throw new NotFoundException($"Entity with ID {id} not found.");
 
     public async ValueTask<T> InsertAsync<T>(T entity) where T : class
     {

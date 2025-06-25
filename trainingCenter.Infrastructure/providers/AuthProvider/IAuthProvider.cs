@@ -7,8 +7,8 @@ namespace trainingCenter.Infrastructure.providers.AuthProvider
     public interface IAuthProvider
     {
         string GenerateJwtToken(User user);
-        string GenerateRefreshToken();
-        public ClaimsPrincipal ValidateToken(string token);
+        (string Token, DateTime Expiration) GenerateRefreshToken();
         TokenValidationParameters GetValidationParameters();
+        ClaimsPrincipal ValidateToken(string token);
     }
 }

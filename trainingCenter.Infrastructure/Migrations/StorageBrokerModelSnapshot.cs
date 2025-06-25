@@ -326,7 +326,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<string>("ParentPhoneNumber")
@@ -334,7 +333,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ParentTelegramId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")

@@ -12,7 +12,7 @@ using trainingCenter.Infrastructure.brokers.storage;
 namespace trainingCenter.Infrastructure.Migrations
 {
     [DbContext(typeof(StorageBroker))]
-    [Migration("20250622153854_InitialMigration")]
+    [Migration("20250624103349_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -329,7 +329,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<string>("ParentPhoneNumber")
@@ -337,7 +336,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ParentTelegramId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")

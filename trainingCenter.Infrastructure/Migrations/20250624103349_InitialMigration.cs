@@ -34,12 +34,12 @@ namespace trainingCenter.Infrastructure.Migrations
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     PhoneNumber = table.Column<string>(type: "text", nullable: false),
                     ParentPhoneNumber = table.Column<string>(type: "text", nullable: false),
-                    ParentTelegramId = table.Column<string>(type: "text", nullable: false),
+                    ParentTelegramId = table.Column<string>(type: "text", nullable: true),
                     BirthDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Address = table.Column<string>(type: "text", nullable: false),
                     EnrollmentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Notes = table.Column<string>(type: "jsonb", nullable: false)
+                    Notes = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
