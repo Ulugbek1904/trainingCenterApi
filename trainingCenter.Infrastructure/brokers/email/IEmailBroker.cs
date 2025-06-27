@@ -1,7 +1,9 @@
-﻿namespace trainingCenter.Infrastructure.brokers.email
+﻿using System.Threading.Tasks;
+
+namespace trainingCenter.Infrastructure.brokers.email
 {
     public interface IEmailBroker
     {
-        ValueTask SendPasswordResetEmailAsync(string email, string PasswordResetOtp);
+        ValueTask SendEmailAsync(string email, string subject, string body);
     }
 }

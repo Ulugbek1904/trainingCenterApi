@@ -73,30 +73,6 @@ namespace trainingCenter.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notification",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    StudentId = table.Column<Guid>(type: "uuid", nullable: true),
-                    RecipientTelegramId = table.Column<string>(type: "text", nullable: false),
-                    Message = table.Column<string>(type: "text", nullable: false),
-                    Type = table.Column<string>(type: "text", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    IsDelivered = table.Column<bool>(type: "boolean", nullable: false),
-                    Channel = table.Column<string>(type: "text", nullable: false),
-                    Priority = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notification", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Notification_Students_StudentId",
-                        column: x => x.StudentId,
-                        principalTable: "Students",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Courses",
                 columns: table => new
                 {
@@ -111,7 +87,7 @@ namespace trainingCenter.Infrastructure.Migrations
                     Schedule = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CategoryId = table.Column<int>(type: "integer", nullable: true),
-                    Materials = table.Column<string>(type: "jsonb", nullable: false),
+                    Materials = table.Column<string>(type: "jsonb", nullable: true),
                     Level = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -216,6 +192,37 @@ namespace trainingCenter.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    StudentId = table.Column<Guid>(type: "uuid", nullable: true),
+                    CourseId = table.Column<Guid>(type: "uuid", nullable: true),
+                    RecipientTelegramId = table.Column<string>(type: "text", nullable: false),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    IsDelivered = table.Column<bool>(type: "boolean", nullable: false),
+                    Channel = table.Column<string>(type: "text", nullable: false),
+                    Priority = table.Column<string>(type: "text", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Notification_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Payments",
                 columns: table => new
                 {
@@ -225,12 +232,12 @@ namespace trainingCenter.Infrastructure.Migrations
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     PaymentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     DueDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<string>(type: "text", nullable: true),
                     PaymentMethod = table.Column<string>(type: "text", nullable: false),
-                    TransactionId = table.Column<string>(type: "text", nullable: false),
+                    TransactionId = table.Column<string>(type: "text", nullable: true),
                     Discount = table.Column<decimal>(type: "numeric", nullable: true),
-                    InstallmentPlan = table.Column<string>(type: "jsonb", nullable: false),
-                    ReceiptUrl = table.Column<string>(type: "text", nullable: false)
+                    InstallmentPlan = table.Column<string>(type: "jsonb", nullable: true),
+                    ReceiptUrl = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -312,6 +319,11 @@ namespace trainingCenter.Infrastructure.Migrations
                 name: "IX_Grades_TeacherId",
                 table: "Grades",
                 column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_CourseId",
+                table: "Notification",
+                column: "CourseId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notification_StudentId",

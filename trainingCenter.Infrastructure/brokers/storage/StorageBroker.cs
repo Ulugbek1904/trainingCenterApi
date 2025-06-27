@@ -37,6 +37,11 @@ public class StorageBroker : DbContext, IStorageBroker
         => await this.Set<T>().FindAsync(id) ?? 
         throw new NotFoundException($"Entity with ID {id} not found.");
 
+    public async ValueTask<T> SelectByIdAsync<T>(int id) where T : class
+    {
+        return await this.Set<T>().FindAsync(id) ?? throw new NotFoundException($"Entity with ID {id} not found");
+    }
+
     public async ValueTask<T> InsertAsync<T>(T entity) where T : class
     {
         await this.Set<T>().AddAsync(entity);
@@ -140,9 +145,15 @@ public class StorageBroker : DbContext, IStorageBroker
             .HasForeignKey(p => p.CourseId);
 
         modelBuilder.Entity<Notification>()
-            .HasOne(n => n.Student)
+                .HasOne(n => n.Student)
+                .WithMany()
+                .HasForeignKey(n => n.StudentId)
+                .IsRequired(false);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.Course)
             .WithMany()
-            .HasForeignKey(n => n.StudentId)
+            .HasForeignKey(n => n.CourseId)
             .IsRequired(false);
 
         modelBuilder.Entity<RefreshToken>()

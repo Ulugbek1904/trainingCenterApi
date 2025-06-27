@@ -12,5 +12,6 @@ namespace trainingCenter.Infrastructure.brokers.storage
         public ValueTask<T> UpdateAsync<T>(T entity) where T : class;
         public ValueTask<T> DeleteAsync<T>(T entity) where T : class;
         ValueTask<T?> SelectByKeyAsync<T>(params object[] keyValues) where T : class;
+        ValueTask<T> SelectByIdAsync<T>(int id) where T : class;
     }
 }

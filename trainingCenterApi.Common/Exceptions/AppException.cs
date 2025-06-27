@@ -22,10 +22,34 @@ namespace trainingCenter.Common.Exceptions
         }
     }
 
+    public class NullArgumentException : AppException
+    {
+        public NullArgumentException(string message)
+            : base(message, 400, "https://httpstatuses.com/400")
+        {
+        }
+        public NullArgumentException(string message, Exception innerException)
+            : base(message, innerException, 400, "https://httpstatuses.com/400")
+        {
+        }
+    }
+
     public class NotFoundException : AppException
     {
         public NotFoundException(string message)
             : base(message, 404, "https://httpstatuses.com/404")
+        {
+        }
+    }
+
+    public class ArgumentException : AppException
+    {
+        public ArgumentException(string message)
+            : base(message, 400, "https://httpstatuses.com/400")
+        {
+        }
+        public ArgumentException(string message, Exception innerException)
+            : base(message, innerException, 400, "https://httpstatuses.com/400")
         {
         }
     }

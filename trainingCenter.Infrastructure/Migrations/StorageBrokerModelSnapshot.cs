@@ -104,7 +104,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Materials")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<int>("MaxStudents")
@@ -184,6 +183,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsDelivered")
                         .HasColumnType("boolean");
 
@@ -213,6 +218,8 @@ namespace trainingCenter.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CourseId");
+
                     b.HasIndex("StudentId");
 
                     b.ToTable("Notification");
@@ -237,7 +244,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("InstallmentPlan")
-                        .IsRequired()
                         .HasColumnType("jsonb");
 
                     b.Property<DateTime>("PaymentDate")
@@ -250,18 +256,15 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ReceiptUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TransactionId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -512,9 +515,15 @@ namespace trainingCenter.Infrastructure.Migrations
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Notification", b =>
                 {
+                    b.HasOne("trainingCenter.Domain.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId");
+
                     b.HasOne("trainingCenter.Domain.Models.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId");
+
+                    b.Navigation("Course");
 
                     b.Navigation("Student");
                 });

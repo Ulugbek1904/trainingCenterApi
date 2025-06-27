@@ -21,6 +21,6 @@ public class Course
     public List<StudentCourse> StudentCourses { get; set; } = new List<StudentCourse>(); 
     public int? CategoryId { get; set; }
     public Category Category { get; set; } 
-    public string Materials { get; set; } = string.Empty;
+    public string? Materials { get; set; } = string.Empty;
     public CourseLevel Level { get; set; }
 }

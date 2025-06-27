@@ -2,8 +2,8 @@
 
 public enum NotificationType
 {
-    Attendance = 0,
-    Grade = 1,
-    Payment = 2,
+    GradeUpdate = 0,
+    PaymentUpdate = 1,
+    AttendanceUpdate = 2,
     General = 3
 }

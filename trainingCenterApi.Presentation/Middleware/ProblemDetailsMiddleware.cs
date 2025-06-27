@@ -64,6 +64,17 @@ public class ProblemDetailsMiddleware
                     Instance = context.Request.Path
                 };
                 break;
+            case InvalidOperationException ex:
+                context.Response.StatusCode = StatusCodes.Status409Conflict;
+                problem = new ProblemDetails
+                {
+                    Title = "Conflict",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status409Conflict,
+                    Type = "https://httpstatuses.com/409",
+                    Instance = context.Request.Path
+                };
+                break;
             default:
                 context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                 problem = new ProblemDetails

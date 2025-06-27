@@ -14,10 +14,10 @@ public class Payment
     public decimal Amount { get; set; }
     public DateTime PaymentDate { get; set; }
     public DateTime? DueDate { get; set; } 
-    public string Status { get; set; } = string.Empty;
+    public string? Status { get; set; } = string.Empty;
     public PaymentMethod PaymentMethod { get; set; }
-    public string TransactionId { get; set; }
+    public string? TransactionId { get; set; }
     public decimal? Discount { get; set; } 
-    public string InstallmentPlan { get; set; } 
-    public string ReceiptUrl { get; set; }
+    public string? InstallmentPlan { get; set; } 
+    public string? ReceiptUrl { get; set; }
 }
