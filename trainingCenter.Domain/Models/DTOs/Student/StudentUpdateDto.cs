@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using trainingCenter.Domain.Enums;
 
 namespace trainingCenter.Domain.Models.DTOs.Student;
 
@@ -16,6 +17,8 @@ public class StudentUpdateDto
     [Phone]
     public string ParentPhoneNumber { get; set; }
 
+    [Required]
+    public Gender Gender { get; set; }
     [Required]
     public DateTime BirthDate { get; set; }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -35,6 +36,8 @@ namespace trainingCenter.Services.Foundation
             if (course == null)
                 throw new ArgumentException($"Course with ID {attendance.CourseId} not found");
 
+            Console.WriteLine("bu yerda xato bo'ldi Notificationga yetmasdan");
+
             var createdAttendance = await storageBroker.InsertAsync(attendance);
 
             // Telegram xabari
@@ -51,8 +54,10 @@ namespace trainingCenter.Services.Foundation
                 var message = $"Hurmatli ota-ona, farzandingiz " +
                     $"{student.FullName} {course.Name} kursida (Daraja: {course.Level})" +
                     $" {statusText}. Izoh: {attendance.Notes ?? "Yo'q"}";
+                Log.Information("Xato noti yaratishda bo'layabdi???");
                 var notification = new Notification
                 {
+                    TenantId = student.TenantId,
                     StudentId = student.Id,
                     CourseId = course.Id,
                     RecipientTelegramId = student.ParentTelegramId,

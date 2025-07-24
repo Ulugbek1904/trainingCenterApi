@@ -8,6 +8,7 @@ namespace trainingCenter.Domain.Models.DTOs
     {
         [Required]
         public Guid Id { get; set; }
+        public Guid TenantId { get; set; } 
         [Required, StringLength(50)]
         public string Username { get; set; }
         public string Password { get; set; } // Faqat yangilansa hash qilinadi
@@ -17,8 +18,8 @@ namespace trainingCenter.Domain.Models.DTOs
         [EmailAddress]
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public string TelegramId { get; set; }
-        public string ProfilePictureUrl { get; set; }
+        public string? TelegramId { get; set; }
+        public string? ProfilePictureUrl { get; set; }
         public string Address { get; set; }
         public string LanguagePreference { get; set; }
         public bool IsActive { get; set; }

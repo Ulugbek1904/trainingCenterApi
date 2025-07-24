@@ -2,8 +2,10 @@
 
 public enum Role
 {
-    Admin = 0,
-    Teacher = 1,
-    Student = 2,
-    Guest = 3
+    SuperAdmin = 0,
+    Admin = 1,
+    Teacher = 2,
+    Student = 3,
+    Guest = 4,
+    Secretary = 5
 }

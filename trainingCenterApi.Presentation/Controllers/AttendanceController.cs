@@ -1,44 +1,40 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Models;
 using trainingCenter.Domain.Models.DTOs;
 using trainingCenter.Services.Foundation.Interfaces;
-using ArgumentException = trainingCenter.Common.Exceptions.ArgumentException;
 
 namespace trainingCenter.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Teacher,Admin")]
     public class AttendancesController : ControllerBase
     {
         private readonly IAttendanceService attendanceService;
         private readonly IMapper mapper;
+        private readonly ICurrentUserService currentUser;
 
-        public AttendancesController(IAttendanceService attendanceService, IMapper mapper)
+        public AttendancesController(
+            IAttendanceService attendanceService,
+            IMapper mapper,
+            ICurrentUserService currentUser)
         {
-            this.attendanceService = attendanceService ?? throw new ArgumentNullException(nameof(attendanceService));
-            this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            this.attendanceService = attendanceService;
+            this.mapper = mapper;
+            this.currentUser = currentUser;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateAttendance([FromBody] AttendanceCreateDto attendanceDto)
         {
-            try
-            {
-                var attendance = mapper.Map<Attendance>(attendanceDto);
-                var createdAttendance = await attendanceService.RegisterAttendanceAsync(attendance);
-                var resultDto = mapper.Map<AttendanceDto>(createdAttendance);
-                return CreatedAtAction(nameof(GetAttendanceById), new { id = resultDto.Id }, resultDto);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            var attendance = mapper.Map<Attendance>(attendanceDto);
+            attendance.TenantId = currentUser.TenantId;
+
+            var createdAttendance = await attendanceService.RegisterAttendanceAsync(attendance);
+            var resultDto = mapper.Map<AttendanceDto>(createdAttendance);
+            return CreatedAtAction(nameof(GetAttendanceById), new { id = resultDto.Id }, resultDto);
         }
 
         [HttpGet]
@@ -47,15 +43,22 @@ namespace trainingCenter.Api.Controllers
             if (page < 1 || size < 1)
                 return BadRequest("Page and size must be positive.");
 
-            var attendances = await attendanceService.RetrieveAllAttendancesAsync();
-            var totalCount = attendances.Count;
-            var pagedAttendances = attendances.Skip((page - 1) * size).Take(size).ToList();
-            var resultDtos = mapper.Map<List<AttendanceDto>>(pagedAttendances);
+            var allAttendances = await attendanceService.RetrieveAllAttendancesAsync();
+            var tenantAttendances = allAttendances
+                .Where(a => a.TenantId == currentUser.TenantId)
+                .ToList();
+
+            var paged = tenantAttendances
+                .Skip((page - 1) * size)
+                .Take(size)
+                .ToList();
+
+            var resultDtos = mapper.Map<List<AttendanceDto>>(paged);
 
             var result = new PagedResult<AttendanceDto>
             {
                 Items = resultDtos,
-                TotalCount = totalCount,
+                TotalCount = tenantAttendances.Count,
                 PageNumber = page,
                 PageSize = size
             };
@@ -67,6 +70,10 @@ namespace trainingCenter.Api.Controllers
         public async Task<IActionResult> GetAttendanceById(Guid id)
         {
             var attendance = await attendanceService.RetrieveAttendanceByIdAsync(id);
+
+            if (attendance.TenantId != currentUser.TenantId)
+                return Forbid("You cannot access attendance from another tenant.");
+
             var resultDto = mapper.Map<AttendanceDto>(attendance);
             return Ok(resultDto);
         }
@@ -75,9 +82,11 @@ namespace trainingCenter.Api.Controllers
         public async Task<IActionResult> UpdateAttendance(Guid id, [FromBody] AttendanceUpdateDto attendanceDto)
         {
             if (id != attendanceDto.Id)
-                throw new ArgumentException("ID mismatch.");
+                return BadRequest("ID mismatch.");
 
             var attendance = mapper.Map<Attendance>(attendanceDto);
+            attendance.TenantId = currentUser.TenantId;
+
             var updatedAttendance = await attendanceService.ModifyAttendanceAsync(attendance);
             var resultDto = mapper.Map<AttendanceDto>(updatedAttendance);
             return Ok(resultDto);
@@ -86,6 +95,11 @@ namespace trainingCenter.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAttendance(Guid id)
         {
+            var attendance = await attendanceService.RetrieveAttendanceByIdAsync(id);
+
+            if (attendance.TenantId != currentUser.TenantId)
+                return Forbid("You cannot delete attendance from another tenant.");
+
             await attendanceService.RemoveAttendanceAsync(id);
             return NoContent();
         }

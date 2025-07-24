@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using trainingCenter.Domain.Enums;
 
 namespace trainingCenter.Domain.Models.DTOs

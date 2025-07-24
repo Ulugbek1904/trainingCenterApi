@@ -6,6 +6,7 @@ namespace trainingCenter.Domain.Models.DTOs
     public class UserDto
     {
         public Guid Id { get; set; }
+        public Guid TenantId { get; set; }
         public string Username { get; set; }
         public Role Role { get; set; }
         public string FullName { get; set; }

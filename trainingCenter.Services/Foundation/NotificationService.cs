@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Serilog;
 using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Enums;
 using trainingCenter.Domain.Models;
@@ -34,6 +35,7 @@ namespace trainingCenter.Services.Foundation
                     if (string.IsNullOrWhiteSpace(notification.RecipientTelegramId))
                         throw new ArgumentException("RecipientTelegramId cannot be empty for Telegram channel.");
                     await telegramBotProvider.SendMessageAsync(
+                        notification.TenantId,
                         notification.RecipientTelegramId,
                         notification.Message);
                 }
@@ -59,26 +61,40 @@ namespace trainingCenter.Services.Foundation
             if (notification == null || string.IsNullOrWhiteSpace(notification.Message))
                 throw new ArgumentException("Notification cannot be null or have empty Message");
 
-            notification.Id = Guid.NewGuid();
+            Log.Information("Notification ichida bo'ldi");
+
             notification.SentAt = notification.SentAt == default ? DateTime.UtcNow : notification.SentAt;
             return await storageBroker.InsertAsync(notification);
         }
 
-        public async Task SendGroupNotificationAsync(string message, NotificationType type, NotificationPriority priority, int? categoryId = null, Guid? courseId = null)
+        public async Task SendGroupNotificationAsync(
+            Guid tenantId,
+            string message,
+            NotificationType type,
+            NotificationPriority priority,
+            int? categoryId = null,
+            Guid? courseId = null)
         {
             if (string.IsNullOrWhiteSpace(message))
                 throw new ArgumentException("Message cannot be empty.");
 
             var query = storageBroker.SelectAll<Student>()
-                .Where(s => s.IsActive && !string.IsNullOrWhiteSpace(s.ParentTelegramId));
+                .Include(s => s.StudentCourses)
+                    .ThenInclude(sc => sc.Course)
+                .Where(s =>
+                    s.IsActive &&
+                    s.TenantId == tenantId &&
+                    !string.IsNullOrWhiteSpace(s.ParentTelegramId));
 
             if (courseId.HasValue)
             {
-                query = query.Where(s => s.StudentCourses.Any(sc => sc.CourseId == courseId.Value));
+                query = query.Where(s =>
+                    s.StudentCourses.Any(sc => sc.CourseId == courseId.Value));
             }
             else if (categoryId.HasValue)
             {
-                query = query.Where(s => s.StudentCourses.Any(sc => sc.Course.CategoryId == categoryId.Value));
+                query = query.Where(s =>
+                    s.StudentCourses.Any(sc => sc.Course.CategoryId == categoryId.Value));
             }
 
             var students = await query.ToListAsync();
@@ -96,8 +112,30 @@ namespace trainingCenter.Services.Foundation
                     Priority = priority,
                     IsDelivered = false
                 };
+
                 await SendNotificationAsync(notification);
             }
         }
+
+        public async Task<List<Notification>> GetNotificationsByStudentIdAsync(Guid tenantId, Guid studentId)
+        {
+            if (studentId == Guid.Empty)
+                throw new ArgumentException("Student ID cannot be empty.");
+
+            return await storageBroker.SelectAll<Notification>()
+                .Where(n => n.TenantId == tenantId && n.StudentId == studentId)
+                .OrderByDescending(n => n.SentAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Notification>> GetUndeliveredNotificationsAsync(Guid tenantId)
+        {
+            return await storageBroker.SelectAll<Notification>()
+                .Where(n => n.TenantId == tenantId && !n.IsDelivered)
+                .OrderByDescending(n => n.SentAt)
+                .ToListAsync();
+        }
+
+
     }
 }

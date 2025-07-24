@@ -8,6 +8,7 @@ namespace trainingCenter.Domain.Models.DTOs
     {
         [Required, StringLength(50)]
         public string Username { get; set; }
+        public Guid TenantId { get; set; }
         [Required]
         public string Password { get; set; } // Xom parol, hash service'da qilinadi
         [Required]
@@ -16,8 +17,8 @@ namespace trainingCenter.Domain.Models.DTOs
         [EmailAddress]
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
-        public string TelegramId { get; set; }
-        public string ProfilePictureUrl { get; set; }
+        public string? TelegramId { get; set; }
+        public string? ProfilePictureUrl { get; set; }
         public string Address { get; set; }
         public string LanguagePreference { get; set; }
     }

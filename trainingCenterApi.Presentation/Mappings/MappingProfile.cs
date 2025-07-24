@@ -1,6 +1,7 @@
 ﻿using trainingCenter.Domain.Models.DTOs.Student;
 using trainingCenter.Domain.Models;
 using trainingCenter.Domain.Models.DTOs;
+using trainingCenter.Domain.Models.DTOs.Tenant;
 
 namespace trainingCenterApi.Presentation.Mappings;
 
@@ -107,6 +108,23 @@ public class MappingProfile : AutoMapper.Profile
             .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.Password))
             .ForMember(dest => dest.RefreshTokens, opt => opt.Ignore());
         CreateMap<User, UserDto>();
+
+        // Tenant <-> DTO
+        CreateMap<Tenant, TenantDto>().ReverseMap();
+
+        CreateMap<TenantCreateDto, Tenant>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(_ => true));
+
+        CreateMap<TenantUpdateDto, Tenant>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(_ => DateTime.UtcNow));
+
+
+
     }
 
 }

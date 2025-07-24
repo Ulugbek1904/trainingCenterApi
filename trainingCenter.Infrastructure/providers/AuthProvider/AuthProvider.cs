@@ -34,10 +34,9 @@ namespace trainingCenter.Infrastructure.providers.AuthProvider
                 new Claim("FullName", user.FullName),
                 new Claim("Email", user.Email),
                 new Claim("PhoneNumber", user.PhoneNumber),
-                new Claim("TelegramId", user.TelegramId),
-                new Claim("ProfilePictureUrl", user.ProfilePictureUrl),
                 new Claim("Address", user.Address),
-                new Claim("LanguagePreference", user.LanguagePreference)
+                new Claim("LanguagePreference", user.LanguagePreference),
+                new Claim("TenantId", user.TenantId.ToString()),
             };
 
             var token = new JwtSecurityToken(

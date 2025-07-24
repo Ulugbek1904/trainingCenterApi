@@ -7,23 +7,49 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace trainingCenter.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialMigration : Migration
+    public partial class InitialMIgration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Tenants",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    LogoUrl = table.Column<string>(type: "text", nullable: false),
+                    ContactPhoneNumber = table.Column<string>(type: "text", nullable: false),
+                    Address = table.Column<string>(type: "text", nullable: false),
+                    Language = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Tenants", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Categories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -31,7 +57,9 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     FullName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Gender = table.Column<int>(type: "integer", nullable: false),
                     PhoneNumber = table.Column<string>(type: "text", nullable: false),
                     ParentPhoneNumber = table.Column<string>(type: "text", nullable: false),
                     ParentTelegramId = table.Column<string>(type: "text", nullable: true),
@@ -44,6 +72,31 @@ namespace trainingCenter.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Students", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Students_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TelegramBotSettings",
+                columns: table => new
+                {
+                    TelegramBotId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
+                    BotToken = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TelegramBotSettings", x => x.TelegramBotId);
+                    table.ForeignKey(
+                        name: "FK_TelegramBotSettings_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -51,25 +104,33 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Username = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
                     Role = table.Column<string>(type: "text", nullable: false),
                     FullName = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     PhoneNumber = table.Column<string>(type: "text", nullable: false),
-                    TelegramId = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
-                    LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    ProfilePictureUrl = table.Column<string>(type: "text", nullable: false),
+                    TelegramId = table.Column<string>(type: "text", nullable: true),
+                    ProfilePictureUrl = table.Column<string>(type: "text", nullable: true),
                     Address = table.Column<string>(type: "text", nullable: false),
                     LanguagePreference = table.Column<string>(type: "text", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     PasswordResetOtp = table.Column<string>(type: "text", nullable: true),
-                    OtpExpiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    OtpExpiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    LastLoginAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Users_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -77,6 +138,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
@@ -99,6 +161,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         principalTable: "Categories",
                         principalColumn: "Id");
                     table.ForeignKey(
+                        name: "FK_Courses_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Courses_Users_TeacherId",
                         column: x => x.TeacherId,
                         principalTable: "Users",
@@ -113,8 +181,10 @@ namespace trainingCenter.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Token = table.Column<string>(type: "text", nullable: false),
-                    Expiration = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    IsRevoked = table.Column<bool>(type: "boolean", nullable: false)
+                    ExpirationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    IsRevoked = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -132,6 +202,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     StudentId = table.Column<Guid>(type: "uuid", nullable: false),
                     CourseId = table.Column<Guid>(type: "uuid", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -154,6 +225,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         principalTable: "Students",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Attendances_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -161,6 +238,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     StudentId = table.Column<Guid>(type: "uuid", nullable: false),
                     CourseId = table.Column<Guid>(type: "uuid", nullable: false),
                     Score = table.Column<int>(type: "integer", nullable: false),
@@ -184,6 +262,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_Grades_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Grades_Users_TeacherId",
                         column: x => x.TeacherId,
                         principalTable: "Users",
@@ -196,6 +280,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     StudentId = table.Column<Guid>(type: "uuid", nullable: true),
                     CourseId = table.Column<Guid>(type: "uuid", nullable: true),
                     RecipientTelegramId = table.Column<string>(type: "text", nullable: false),
@@ -220,6 +305,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         column: x => x.StudentId,
                         principalTable: "Students",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Notification_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -227,6 +318,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     StudentId = table.Column<Guid>(type: "uuid", nullable: false),
                     CourseId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
@@ -254,6 +346,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         principalTable: "Students",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Payments_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -262,6 +360,7 @@ namespace trainingCenter.Infrastructure.Migrations
                 {
                     StudentId = table.Column<Guid>(type: "uuid", nullable: false),
                     CourseId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     EnrollmentDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP"),
                     GroupName = table.Column<string>(type: "text", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
@@ -283,6 +382,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         principalTable: "Students",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_StudentCourses_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -296,6 +401,16 @@ namespace trainingCenter.Infrastructure.Migrations
                 column: "StudentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Attendances_TenantId",
+                table: "Attendances",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_TenantId",
+                table: "Categories",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Courses_CategoryId",
                 table: "Courses",
                 column: "CategoryId");
@@ -304,6 +419,11 @@ namespace trainingCenter.Infrastructure.Migrations
                 name: "IX_Courses_TeacherId",
                 table: "Courses",
                 column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Courses_TenantId",
+                table: "Courses",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Grades_CourseId",
@@ -321,6 +441,11 @@ namespace trainingCenter.Infrastructure.Migrations
                 column: "TeacherId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Grades_TenantId",
+                table: "Grades",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notification_CourseId",
                 table: "Notification",
                 column: "CourseId");
@@ -329,6 +454,11 @@ namespace trainingCenter.Infrastructure.Migrations
                 name: "IX_Notification_StudentId",
                 table: "Notification",
                 column: "StudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_TenantId",
+                table: "Notification",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Payments_CourseId",
@@ -341,6 +471,11 @@ namespace trainingCenter.Infrastructure.Migrations
                 column: "StudentId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Payments_TenantId",
+                table: "Payments",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
                 table: "RefreshTokens",
                 column: "UserId");
@@ -349,6 +484,27 @@ namespace trainingCenter.Infrastructure.Migrations
                 name: "IX_StudentCourses_CourseId",
                 table: "StudentCourses",
                 column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudentCourses_TenantId",
+                table: "StudentCourses",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Students_TenantId",
+                table: "Students",
+                column: "TenantId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TelegramBotSettings_TenantId",
+                table: "TelegramBotSettings",
+                column: "TenantId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_TenantId",
+                table: "Users",
+                column: "TenantId");
         }
 
         /// <inheritdoc />
@@ -373,6 +529,9 @@ namespace trainingCenter.Infrastructure.Migrations
                 name: "StudentCourses");
 
             migrationBuilder.DropTable(
+                name: "TelegramBotSettings");
+
+            migrationBuilder.DropTable(
                 name: "Courses");
 
             migrationBuilder.DropTable(
@@ -383,6 +542,9 @@ namespace trainingCenter.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Tenants");
         }
     }
 }

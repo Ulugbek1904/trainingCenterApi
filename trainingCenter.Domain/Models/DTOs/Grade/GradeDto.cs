@@ -5,6 +5,7 @@ namespace trainingCenter.Domain.Models.DTOs
     public class GradeDto
     {
         public Guid Id { get; set; }
+        public Guid TenantId { get; set; }
         public Guid StudentId { get; set; }
         public string StudentName { get; set; }
         public Guid CourseId { get; set; }

@@ -26,6 +26,8 @@ public class StorageBroker : DbContext, IStorageBroker
     public DbSet<Grade> Grades => Set<Grade>();
     public DbSet<Attendance> Attendances => Set<Attendance>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<TelegramBotSetting> TelegramBotSettings => Set<TelegramBotSetting>();
 
     public IQueryable<T> SelectAll<T>() where T : class
         => Set<T>().AsQueryable();
@@ -87,8 +89,85 @@ public class StorageBroker : DbContext, IStorageBroker
         modelBuilder.Entity<Notification>().HasKey(n => n.Id);
         modelBuilder.Entity<Category>().HasKey(c => c.Id);
         modelBuilder.Entity<RefreshToken>().HasKey(rt => rt.Id);
+        modelBuilder.Entity<TelegramBotSetting>().HasKey(t => t.TelegramBotId);
+        modelBuilder.Entity<Tenant>().HasKey(t => t.Id);
+
 
         // Relationships
+
+        modelBuilder.Entity<TelegramBotSetting>()
+            .HasOne(t => t.Tenant)
+            .WithOne(tbs => tbs.TelegramBotSetting)
+            .HasForeignKey<TelegramBotSetting>(t => t.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+
+        modelBuilder.Entity<Tenant>()
+            .HasOne(t => t.TelegramBotSetting)
+            .WithOne(tbs => tbs.Tenant)
+            .HasForeignKey<TelegramBotSetting>(tbs => tbs.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<User>()
+        .HasOne(u => u.Tenant)
+        .WithMany(t => t.Users)
+        .HasForeignKey(u => u.TenantId)
+        .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Student>()
+            .HasOne(s => s.Tenant)
+            .WithMany(t => t.Students)
+            .HasForeignKey(s => s.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Course>()
+            .HasOne(c => c.Tenant)
+            .WithMany(t => t.Courses)
+            .HasForeignKey(c => c.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Category>()
+            .HasOne(c => c.Tenant)
+            .WithMany()
+            .HasForeignKey(c => c.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Payment>()
+            .HasOne(p => p.Tenant)
+            .WithMany()
+            .HasForeignKey(p => p.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.Tenant)
+            .WithMany()
+            .HasForeignKey(n => n.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Grade>()
+            .HasOne(g => g.Tenant)
+            .WithMany()
+            .HasForeignKey(g => g.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Attendance>()
+            .HasOne(a => a.Tenant)
+            .WithMany()
+            .HasForeignKey(a => a.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<StudentCourse>()
+            .HasOne(sc => sc.Tenant)
+            .WithMany()
+            .HasForeignKey(sc => sc.TenantId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RefreshToken>()
+            .HasOne(rt => rt.User)
+            .WithMany(u => u.RefreshTokens)
+            .HasForeignKey(rt => rt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<StudentCourse>()
             .HasOne(sc => sc.Student)
             .WithMany(s => s.StudentCourses)
@@ -155,11 +234,6 @@ public class StorageBroker : DbContext, IStorageBroker
             .WithMany()
             .HasForeignKey(n => n.CourseId)
             .IsRequired(false);
-
-        modelBuilder.Entity<RefreshToken>()
-            .HasOne(rt => rt.User)
-            .WithMany(u => u.RefreshTokens)
-            .HasForeignKey(rt => rt.UserId);
 
         // JSONB Fields
         modelBuilder.Entity<Course>()

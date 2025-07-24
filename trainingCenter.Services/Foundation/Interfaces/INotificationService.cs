@@ -8,8 +8,14 @@ namespace trainingCenter.Services.Foundation.Interfaces
     {
         Task SendNotificationAsync(Notification notification);
         Task<Notification> CreateNotificationAsync(Notification notification);
+        Task<List<Notification>> GetNotificationsByStudentIdAsync(Guid tenantId, Guid studentId);
+        Task<List<Notification>> GetUndeliveredNotificationsAsync(Guid tenantId);
         Task SendGroupNotificationAsync(
-            string message, NotificationType type, NotificationPriority priority,
-            int? categoryId = null, Guid? courseId = null);
+            Guid tenantId,
+            string message,
+            NotificationType type,
+            NotificationPriority priority,
+            int? categoryId = null,
+            Guid? courseId = null);
     }
 }

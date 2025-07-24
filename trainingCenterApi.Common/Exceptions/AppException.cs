@@ -22,6 +22,24 @@ namespace trainingCenter.Common.Exceptions
         }
     }
 
+    public class UnauthorizedException : AppException
+    {
+        public UnauthorizedException(string message)
+            : base(message, 401, "https://httpstatuses.com/401")
+        {
+        }
+        public UnauthorizedException(string message, Exception innerException)
+            : base(message, innerException, 401, "https://httpstatuses.com/401")
+        {
+        }
+    }
+    public class AlreadyExistsException : AppException
+    {
+        public AlreadyExistsException(string message) :
+            base(message, 409, "https://httpstatuses.com/400")
+        {}
+    }
+
     public class NullArgumentException : AppException
     {
         public NullArgumentException(string message)

@@ -1,13 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using trainingCenter.Domain.Enums;
 
 namespace trainingCenter.Domain.Models;
 
 public class Student
 {
     public Guid Id { get; set; }
+    public Guid TenantId { get; set; }
+    public Tenant Tenant { get; set; }
     [Phone]
     [Required, StringLength(100)]
     public string FullName { get; set; }
+    public Gender Gender { get; set; }
     public string PhoneNumber { get; set; }
     public string ParentPhoneNumber { get; set; }
     public string? ParentTelegramId { get; set; }

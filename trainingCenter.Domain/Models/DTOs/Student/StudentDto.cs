@@ -3,6 +3,7 @@
 public class StudentDto
 {
     public Guid Id { get; set; }
+    public Guid TenantId { get; set; }
     public string FullName { get; set; }
     public string PhoneNumber { get; set; }
     public string ParentPhoneNumber { get; set; }

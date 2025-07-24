@@ -18,26 +18,29 @@ namespace trainingCenter.Services.Foundation
         }
 
         public async Task<StudentReportDto> GetStudentReportAsync(
-           Guid studentId, DateTime? startDate = null, DateTime? endDate = null)
+            Guid studentId,
+            Guid tenantId,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
         {
-            var student = await storageBroker.SelectByIdAsync<Student>(studentId);
+            var student = await storageBroker.SelectAll<Student>()
+                .Where(s => s.Id == studentId && s.TenantId == tenantId)
+                .FirstOrDefaultAsync();
+
             if (student == null)
                 throw new NotFoundException($"Student with ID {studentId} not found");
 
             var attendanceQuery = storageBroker.SelectAll<Attendance>()
-                .Where(a => a.StudentId == studentId)
                 .Include(a => a.Course)
-                .AsQueryable();
+                .Where(a => a.StudentId == studentId && a.TenantId == tenantId);
 
             var gradeQuery = storageBroker.SelectAll<Grade>()
-                .Where(g => g.StudentId == studentId)
                 .Include(g => g.Course)
-                .AsQueryable();
+                .Where(g => g.StudentId == studentId && g.TenantId == tenantId);
 
             var paymentQuery = storageBroker.SelectAll<Payment>()
-                .Where(p => p.StudentId == studentId)
                 .Include(p => p.Course)
-                .AsQueryable();
+                .Where(p => p.StudentId == studentId && p.TenantId == tenantId);
 
             if (startDate.HasValue)
             {
@@ -57,7 +60,7 @@ namespace trainingCenter.Services.Foundation
             var grades = await gradeQuery.ToListAsync();
             var payments = await paymentQuery.ToListAsync();
 
-            var report = new StudentReportDto
+            return new StudentReportDto
             {
                 FullName = student.FullName,
                 AttendanceHistory = attendances.Select(a => new AttendanceReportDto
@@ -86,8 +89,7 @@ namespace trainingCenter.Services.Foundation
                 TotalAttendanceCount = attendances.Count(a => a.Status == Status.keldi),
                 TotalAttendanceHours = attendances.Count(a => a.Status == Status.keldi) * 2
             };
-
-            return report;
         }
+
     }
 }

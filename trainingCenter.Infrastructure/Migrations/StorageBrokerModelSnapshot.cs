@@ -50,11 +50,16 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Attendances");
                 });
@@ -75,7 +80,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Categories");
                 });
@@ -126,11 +136,16 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<Guid>("TeacherId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("TeacherId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Courses");
                 });
@@ -162,6 +177,9 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<Guid>("TeacherId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
@@ -169,6 +187,8 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.HasIndex("StudentId");
 
                     b.HasIndex("TeacherId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Grades");
                 });
@@ -212,6 +232,9 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<Guid?>("StudentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");
@@ -221,6 +244,8 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.HasIndex("CourseId");
 
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Notification");
                 });
@@ -264,6 +289,9 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("TransactionId")
                         .HasColumnType("text");
 
@@ -272,6 +300,8 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.HasIndex("CourseId");
 
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Payments");
                 });
@@ -282,7 +312,10 @@ namespace trainingCenter.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("Expiration")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpirationDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsRevoked")
@@ -291,6 +324,9 @@ namespace trainingCenter.Infrastructure.Migrations
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -325,6 +361,9 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("Gender")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -342,7 +381,12 @@ namespace trainingCenter.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Students");
                 });
@@ -374,11 +418,77 @@ namespace trainingCenter.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("StudentId", "CourseId");
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("StudentCourses");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.TelegramBotSetting", b =>
+                {
+                    b.Property<Guid>("TelegramBotId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BotToken")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TelegramBotId");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique();
+
+                    b.ToTable("TelegramBotSettings");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.Tenant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ContactPhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("LogoUrl")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tenants");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.User", b =>
@@ -429,7 +539,6 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("ProfilePictureUrl")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Role")
@@ -437,8 +546,13 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("TelegramId")
-                        .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -446,6 +560,8 @@ namespace trainingCenter.Infrastructure.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Users");
                 });
@@ -464,9 +580,28 @@ namespace trainingCenter.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Student");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.Category", b =>
+                {
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Course", b =>
@@ -481,9 +616,17 @@ namespace trainingCenter.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany("Courses")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Category");
 
                     b.Navigation("Teacher");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Grade", b =>
@@ -506,11 +649,19 @@ namespace trainingCenter.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Student");
 
                     b.Navigation("Teacher");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Notification", b =>
@@ -523,9 +674,17 @@ namespace trainingCenter.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("StudentId");
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Student");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Payment", b =>
@@ -542,9 +701,17 @@ namespace trainingCenter.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Student");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.RefreshToken", b =>
@@ -556,6 +723,17 @@ namespace trainingCenter.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.Student", b =>
+                {
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany("Students")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.StudentCourse", b =>
@@ -572,9 +750,39 @@ namespace trainingCenter.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Course");
 
                     b.Navigation("Student");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.TelegramBotSetting", b =>
+                {
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithOne("TelegramBotSetting")
+                        .HasForeignKey("trainingCenter.Domain.Models.TelegramBotSetting", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.User", b =>
+                {
+                    b.HasOne("trainingCenter.Domain.Models.Tenant", "Tenant")
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.Category", b =>
@@ -590,6 +798,18 @@ namespace trainingCenter.Infrastructure.Migrations
             modelBuilder.Entity("trainingCenter.Domain.Models.Student", b =>
                 {
                     b.Navigation("StudentCourses");
+                });
+
+            modelBuilder.Entity("trainingCenter.Domain.Models.Tenant", b =>
+                {
+                    b.Navigation("Courses");
+
+                    b.Navigation("Students");
+
+                    b.Navigation("TelegramBotSetting")
+                        .IsRequired();
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("trainingCenter.Domain.Models.User", b =>

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Models;
@@ -6,89 +7,101 @@ using trainingCenter.Domain.Models.DTOs;
 using trainingCenter.Services.Foundation.Interfaces;
 using ArgumentException = trainingCenter.Common.Exceptions.ArgumentException;
 
-namespace trainingCenter.Api.Controllers
+namespace trainingCenter.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Admin,Secretary")]
+public class StudentCoursesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class StudentCoursesController : ControllerBase
+    private readonly IStudentCourseService studentCourseService;
+    private readonly IMapper mapper;
+    private readonly ICurrentUserService currentUser;
+
+    public StudentCoursesController(
+        IStudentCourseService studentCourseService,
+        IMapper mapper, 
+        ICurrentUserService currentUser)
     {
-        private readonly IStudentCourseService studentCourseService;
-        private readonly IMapper mapper;
+        this.studentCourseService = studentCourseService ??
+            throw new NullArgumentException(nameof(studentCourseService));
 
-        public StudentCoursesController(IStudentCourseService studentCourseService, IMapper mapper)
+        this.mapper = mapper ?? 
+            throw new NullArgumentException(nameof(mapper));
+
+        this.currentUser = currentUser ??
+            throw new NullArgumentException(nameof(currentUser));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateStudentCourse([FromBody] StudentCourseCreateDto dto)
+    {
+        var studentCourse = mapper.Map<StudentCourse>(dto);
+        studentCourse.TenantId = currentUser.TenantId;
+
+        var created = await studentCourseService.RegisterStudentCourseAsync(studentCourse);
+
+        return CreatedAtAction(nameof(GetStudentCourse), new
+            { studentId = created.StudentId, courseId = created.CourseId },
+            mapper.Map<StudentCourseDto>(created));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllStudentCourses(
+        [FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        var all = await studentCourseService.RetrieveAllStudentCoursesAsync();
+
+        var filtered = all
+            .Where(sc => sc.TenantId == currentUser.TenantId).ToList();
+
+        var paged = filtered.Skip((page - 1) * size).Take(size).ToList();
+        var result = new PagedResult<StudentCourseDto>
         {
-            this.studentCourseService = studentCourseService ?? throw new NullArgumentException(nameof(studentCourseService));
-            this.mapper = mapper ?? throw new NullArgumentException(nameof(mapper));
-        }
+            Items = mapper.Map<List<StudentCourseDto>>(paged),
+            TotalCount = filtered.Count,
+            PageNumber = page,
+            PageSize = size
+        };
+        return Ok(result);
+    }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateStudentCourse([FromBody] StudentCourseCreateDto studentCourseDto)
-        {
-            try
-            {
-                var studentCourse = mapper.Map<StudentCourse>(studentCourseDto);
-                var createdStudentCourse = await studentCourseService.RegisterStudentCourseAsync(studentCourse);
-                var resultDto = mapper.Map<StudentCourseDto>(createdStudentCourse);
-                return CreatedAtAction(nameof(GetStudentCourse), new 
-                    { studentId = resultDto.StudentId, courseId = resultDto.CourseId }, resultDto);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-        }
+    [HttpGet("student/{studentId}/course/{courseId}")]
+    public async Task<IActionResult> GetStudentCourse(Guid studentId, Guid courseId)
+    {
+        var studentCourse = await studentCourseService
+            .RetrieveStudentCourseByIdsAsync(studentId, courseId);
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllStudentCourses([FromQuery] int page = 1, [FromQuery] int size = 10)
-        {
-            if (page < 1 || size < 1)
-                return BadRequest("Page and size must be positive.");
+        if (studentCourse.TenantId != currentUser.TenantId)
+            return Forbid();
 
-            var studentCourses = await studentCourseService.RetrieveAllStudentCoursesAsync();
-            var totalCount = studentCourses.Count;
-            var pagedStudentCourses = studentCourses.Skip((page - 1) * size).Take(size).ToList();
-            var resultDtos = mapper.Map<List<StudentCourseDto>>(pagedStudentCourses);
+        return Ok(mapper.Map<StudentCourseDto>(studentCourse));
+    }
 
-            var result = new PagedResult<StudentCourseDto>
-            {
-                Items = resultDtos,
-                TotalCount = totalCount,
-                PageNumber = page,
-                PageSize = size
-            };
+    [HttpPut("student/{studentId}/course/{courseId}")]
+    public async Task<IActionResult> UpdateStudentCourse(
+        Guid studentId, Guid courseId, [FromBody] StudentCourseUpdateDto dto)
+    {
+        if (studentId != dto.StudentId || courseId != dto.CourseId)
+            throw new ArgumentException("ID mismatch.");
 
-            return Ok(result);
-        }
+        var studentCourse = mapper.Map<StudentCourse>(dto);
+        studentCourse.TenantId = currentUser.TenantId;
 
-        [HttpGet("student/{studentId}/course/{courseId}")]
-        public async Task<IActionResult> GetStudentCourse(Guid studentId, Guid courseId)
-        {
-            var studentCourse = await studentCourseService.RetrieveStudentCourseByIdsAsync(studentId, courseId);
-            var resultDto = mapper.Map<StudentCourseDto>(studentCourse);
-            return Ok(resultDto);
-        }
+        var updated = await studentCourseService.
+            ModifyStudentCourseAsync(studentCourse);
 
-        [HttpPut("student/{studentId}/course/{courseId}")]
-        public async Task<IActionResult> UpdateStudentCourse(Guid studentId, Guid courseId, [FromBody] StudentCourseUpdateDto studentCourseDto)
-        {
-            if (studentId != studentCourseDto.StudentId || courseId != studentCourseDto.CourseId)
-                throw new ArgumentException("ID mismatch.");
+        return Ok(mapper.Map<StudentCourseDto>(updated));
+    }
 
-            var studentCourse = mapper.Map<StudentCourse>(studentCourseDto);
-            var updatedStudentCourse = await studentCourseService.ModifyStudentCourseAsync(studentCourse);
-            var resultDto = mapper.Map<StudentCourseDto>(updatedStudentCourse);
-            return Ok(resultDto);
-        }
+    [HttpDelete("student/{studentId}/course/{courseId}")]
+    public async Task<IActionResult> DeleteStudentCourse(Guid studentId, Guid courseId)
+    {
+        var sc = await studentCourseService.RetrieveStudentCourseByIdsAsync(studentId, courseId);
+        if (sc.TenantId != currentUser.TenantId)
+            return Forbid();
 
-        [HttpDelete("student/{studentId}/course/{courseId}")]
-        public async Task<IActionResult> DeleteStudentCourse(Guid studentId, Guid courseId)
-        {
-            await studentCourseService.RemoveStudentCourseAsync(studentId, courseId);
-            return NoContent();
-        }
+        await studentCourseService.RemoveStudentCourseAsync(studentId, courseId);
+        return NoContent();
     }
 }

@@ -7,6 +7,9 @@ namespace trainingCenter.Services.Foundation.Interfaces
     public interface IReportService
     {
         Task<StudentReportDto> GetStudentReportAsync(
-            Guid studentId, DateTime? startDate = null, DateTime? endDate = null);
+            Guid studentId,
+            Guid tenantId,
+            DateTime? startDate = null,
+            DateTime? endDate = null);
     }
 }

@@ -1,10 +1,10 @@
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using trainingCenter.Infrastructure.brokers.storage;
-using trainingCenter.Infrastructure.brokers.storage.Seed;
 using trainingCenterApi.Presentation.Extensions;
 using trainingCenterApi.Presentation.Middleware;
 
@@ -22,12 +22,42 @@ public class Program
                 .GetConnectionString("DefaultConnection"));
         });
 
+        // CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAngularClient", policy =>
+            {
+                policy.WithOrigins("http://localhost:8080", "http://localhost:4200", "https://trainex-seven.vercel.app/", "https://trainex-seven.vercel.app")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
+        });
+
         builder.Host.UseSerilog((context, configuration) =>
         {
             configuration.WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
                 .WriteTo.Console()
                 .MinimumLevel.Information();
         });
+
+        // Rate Limiting ---------------->
+        builder.Services.AddMemoryCache();
+
+        builder.Services.Configure<IpRateLimitOptions>
+            (builder.Configuration.GetSection("IpRateLimiting"));
+
+        builder.Services.AddSingleton<IIpPolicyStore,
+            MemoryCacheIpPolicyStore>();
+
+        builder.Services.AddSingleton<IRateLimitCounterStore,
+            MemoryCacheRateLimitCounterStore>();
+
+        builder.Services.AddSingleton<IRateLimitConfiguration,
+            RateLimitConfiguration>();
+
+        builder.Services.AddSingleton<IProcessingStrategy,
+            AsyncKeyLockProcessingStrategy>();
 
         builder.Services.AddLogging(logging => logging.AddSerilog());
         builder.Services.AddApplicationService();
@@ -118,9 +148,11 @@ public class Program
         builder.Services.AddAuthorization();
 
         var app = builder.Build();
+        Console.WriteLine($"Current Environment: {app.Environment.EnvironmentName}");
 
         app.UseMiddleware<ProblemDetailsMiddleware>();
 
+        app.UseCors("AllowAngularClient");
 
         await AppDbInitializier.SeedSuperAdminAsync(app.Services);
 

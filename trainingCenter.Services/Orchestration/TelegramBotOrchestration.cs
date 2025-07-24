@@ -1,7 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
-using trainingCenter.Common.Exceptions;
+using trainingCenter.Domain.Models;
+using trainingCenter.Infrastructure.brokers.storage;
 using trainingCenter.Infrastructure.providers.TelegramProvider;
 using trainingCenter.Services.Foundation.Interfaces;
 using trainingCenter.Services.Orchestration.Interfaces;
@@ -10,161 +13,118 @@ namespace trainingCenter.Services.Orchestration
 {
     public class TelegramBotOrchestration : ITelegramBotOrchestration
     {
-        private readonly ITelegramBotProvider telegramBotProvider;
-        private readonly ITelegramBotService telegramService;
+        private readonly ITelegramBotService telegramBotService;
         private readonly ILogger<TelegramBotOrchestration> logger;
-        private const string TrainingCenterName = "Jumaboyev Ulug‘bek";
+        private readonly IStorageBroker storageBroker;
+        private readonly ITelegramBotProvider provider;
+        private readonly IMemoryCache cache;
 
         public TelegramBotOrchestration(
-            ITelegramBotProvider telegramBotProvider,
-            ITelegramBotService telegramService,
-            ILogger<TelegramBotOrchestration> logger)
+            ITelegramBotService telegramBotService,
+            ILogger<TelegramBotOrchestration> logger,
+            IStorageBroker storageBroker,
+            ITelegramBotProvider provider,
+            IMemoryCache cache)
         {
-            this.telegramBotProvider = telegramBotProvider ??
-                throw new ArgumentNullException(nameof(telegramBotProvider));
-            this.telegramService = telegramService ??
-                throw new ArgumentNullException(nameof(telegramService));
+            this.telegramBotService = telegramBotService;
             this.logger = logger;
+            this.storageBroker = storageBroker;
+            this.provider = provider;
+            this.cache = cache;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
-            await telegramBotProvider.StartReceivingAsync(ProcessUpdateAsync, cancellationToken);
+            return Task.CompletedTask;
         }
 
-        public async Task ProcessUpdateAsync(Update update)
+        public async Task ProcessUpdateAsync(Update update, Guid tenantId)
         {
-            if (update == null)
-                return;
-
-            if (update.Message != null)
+            if (update == null || update.Message == null)
             {
-                var chatId = update.Message.Chat.Id.ToString();
-                var telegramId = update.Message.From?.Id.ToString();
-                var messageText = update.Message.Text?.Trim();
-                var name = update.Message.From?.FirstName ?? "Foydalanuvchi";
-                var username = update.Message.From?.Username;
+                logger.LogWarning("[Bot] Received null update or message.");
+                return;
+            }
 
-                if (string.IsNullOrWhiteSpace(telegramId))
-                {
-                    logger.LogError("User Telegram ID cannot be retrieved.");
-                    return;
-                }
+            var telegramId = update.Message.From?.Id.ToString();
+            var chatId = update.Message.Chat.Id.ToString();
+            var messageText = update.Message.Text;
 
-                logger.LogInformation($"Received message: {messageText} from {telegramId}");
+            if (string.IsNullOrWhiteSpace(telegramId))
+            {
+                logger.LogWarning("[Bot] Telegram ID is empty.");
+                return;
+            }
 
+            logger.LogInformation($"[Bot] Processing update. TenantId: {tenantId}, TelegramId: {telegramId}, ChatId: {chatId}, Message: {messageText}");
+
+            // Check if the user is in the process of registering
+            if (cache.TryGetValue($"Register_{telegramId}", out Guid cachedTenantId))
+            {
                 if (update.Message.Contact != null)
                 {
+                    // Handle contact sharing
                     var phoneNumber = update.Message.Contact.PhoneNumber;
-                    try
-                    {
-                        await telegramBotProvider.SendMessageAsync(
-                            "7564432262", $"{username} hamda ismi - {name} hamda nomeri {phoneNumber}");
-
-                        await telegramService.RegisterParentAsync(telegramId, phoneNumber);
-                        await telegramBotProvider.SendMessageAsync(chatId,
-                            "Telefon raqamingiz muvaffaqiyatli ro‘yxatdan o‘tdi!",
-                            replyMarkup: new ReplyKeyboardRemove());
-                    }
-                    catch (NotFoundException ex)
-                    {
-                        await telegramBotProvider.SendMessageAsync(chatId,
-                            $"Xato: {ex.Message}. Iltimos, to‘g‘ri telefon raqamini yuboring yoki farzandingizning ro‘yxatdan o‘tganligini tekshiring.");
-                    }
+                    cache.Remove($"Register_{telegramId}");
+                    await telegramBotService.HandleRegisterPhoneNumberAsync(tenantId, telegramId, phoneNumber);
                     return;
                 }
-
-                if (messageText == "/start")
+                else if (!string.IsNullOrWhiteSpace(messageText))
                 {
-                    var keyboard = new InlineKeyboardMarkup(new[]
-                    {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("🏠 Bosh sahifa", "cmd_start"),
-                            InlineKeyboardButton.WithCallbackData("📝 Ro‘yxatdan o‘tish", "cmd_register")
-                        },
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("📊 Hisobot", "cmd_report")
-                        }
-                    });
-
-                    await telegramBotProvider.SendMessageAsync(chatId,
-                        $"Assalomu alaykum, {name}!\n{TrainingCenterName} rasmiy botiga xush kelibsiz!\n" +
-                        $"Bu bot orqali o‘quv jarayoni, to‘lovlar va bildirishnomalar haqida ma‘lumot olishingiz mumkin.\n" +
-                        $"Iltimos, quyidagi tugmalardan birini tanlang:",
-                        replyMarkup: keyboard);
+                    // Handle manual phone number input
+                    cache.Remove($"Register_{telegramId}");
+                    await telegramBotService.HandleRegisterPhoneNumberAsync(tenantId, telegramId, messageText);
                     return;
-                }
-                else if (messageText == "/register")
-                {
-                    var keyboard = new ReplyKeyboardMarkup(new[]
-                    {
-                        KeyboardButton.WithRequestContact("📱 Kontaktni yuborish")
-                    })
-                    {
-                        ResizeKeyboard = true,
-                        OneTimeKeyboard = true
-                    };
-                    await telegramBotProvider.SendMessageAsync(chatId,
-                        "Ro‘yxatdan o‘tish uchun telefon raqamingizni ‘Kontaktni yuborish’ orqali yuboring.",
-                        replyMarkup: keyboard);
-                    return;
-                }
-                else if (messageText == "/report")
-                {
-                    await telegramService.SendReportMenuAsync(telegramId);
-                    return;
-                }
-                else
-                {
-                    await telegramBotProvider.SendMessageAsync(chatId,
-                        "Noto‘g‘ri buyruq. Iltimos, /start bilan bosh sahifaga qayting yoki /register va /report dan foydalaning.");
                 }
             }
-            else if (update.CallbackQuery != null)
-            {
-                var callbackData = update.CallbackQuery.Data;
-                var telegramId = update.CallbackQuery.From.Id.ToString();
-                var chatId = update.CallbackQuery.Message.Chat.Id.ToString();
-                var name = update.CallbackQuery.From?.FirstName ?? "Foydalanuvchi";
 
-                if (callbackData == "cmd_start")
+            if (messageText == "/register")
+            {
+                // Store registration state
+                cache.Set($"Register_{telegramId}", tenantId, TimeSpan.FromMinutes(5));
+                var keyboard = new ReplyKeyboardMarkup(new KeyboardButton("📞 Kontaktni ulashish")
                 {
-                    await telegramBotProvider.SendMessageAsync(chatId,
-                        $"Assalomu alaykum, {name}!\n{TrainingCenterName} botiga qayta xush kelibsiz!\n" +
-                        $"Bosh sahifada tanlash uchun tugmalardan foydalaning.");
-                    return;
-                }
-                else if (callbackData == "cmd_register")
+                    RequestContact = true
+                })
                 {
-                    var keyboard = new ReplyKeyboardMarkup(new[]
-                    {
-                        KeyboardButton.WithRequestContact("📱 Kontaktni yuborish")
-                    })
-                    {
-                        ResizeKeyboard = true,
-                        OneTimeKeyboard = true
-                    };
-                    await telegramBotProvider.SendMessageAsync(chatId,
-                        "Ro‘yxatdan o‘tish uchun telefon raqamingizni ‘Kontaktni yuborish’ orqali yuboring.",
-                        replyMarkup: keyboard);
-                    return;
-                }
-                else if (callbackData == "cmd_report")
-                {
-                    await telegramService.SendReportMenuAsync(telegramId);
-                    return;
-                }
-                else if (callbackData.StartsWith("select_student_"))
-                {
-                    var studentId = Guid.Parse(callbackData.Replace("select_student_", ""));
-                    await telegramService.SendReportOptionsAsync(telegramId, studentId);
-                }
-                else if (callbackData.StartsWith("report_"))
-                {
-                    await telegramService.SendReportAsync(telegramId, callbackData);
-                }
+                    ResizeKeyboard = true,
+                    OneTimeKeyboard = true
+                };
+                await provider.SendMessageAsync(
+                    tenantId: tenantId,
+                    chatId: chatId,
+                    message: "Iltimos, telefon raqamingizni kiriting (masalan, +998901234567) yoki 'Kontaktni ulashish' tugmasini bosing:",
+                    replyMarkup: keyboard);
+                return;
+            }
+
+            var student = await storageBroker.SelectAll<Student>()
+                .Where(s => s.ParentTelegramId == telegramId && s.TenantId == tenantId)
+                .FirstOrDefaultAsync();
+
+            if (student == null)
+            {
+                logger.LogWarning($"[Bot] No student found for TelegramId: {telegramId}, TenantId: {tenantId}");
+                await provider.SendMessageAsync(
+                    tenantId: tenantId,
+                    chatId: chatId,
+                    message: "Siz ushbu tashkilotda ro‘yxatdan o‘tmagansiz. Iltimos, /register buyrug‘i orqali ro‘yxatdan o‘ting.");
+                return;
+            }
+
+            switch (messageText)
+            {
+                case "/start":
+                    await telegramBotService.SendMenuAsync(tenantId, telegramId);
+                    break;
+
+                case "/report":
+                    await telegramBotService.SendReportMenuAsync(tenantId, telegramId);
+                    break;
+
+                default:
+                    await telegramBotService.SendHelpAsync(tenantId, telegramId);
+                    break;
             }
         }
     }

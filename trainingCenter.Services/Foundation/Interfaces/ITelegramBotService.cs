@@ -2,10 +2,10 @@
 
 public interface ITelegramBotService
 {
-    Task RegisterParentAsync(string parentTelegramId, string parentPhoneNumber);
-    Task SendMessageToParentAsync(Guid studentId, string message);
-    Task SendMessageToAllParentsAsync(string message);
-    Task SendReportMenuAsync(string parentTelegramId);
-    Task SendReportOptionsAsync(string parentTelegramId, Guid studentId);
-    Task SendReportAsync(string parentTelegramId, string callbackData);
+    Task RegisterParentAsync(string telegramId, string phoneNumber);
+    Task SendMenuAsync(Guid tenantId, string telegramId);
+    Task SendReportMenuAsync(Guid tenantId, string telegramId);
+    Task SendReportOptionsAsync(Guid tenantId, string telegramId, Guid studentId);
+    Task SendHelpAsync(Guid tenantId, string telegramId);
+    Task HandleRegisterPhoneNumberAsync(Guid tenantId, string telegramId, string phoneNumber);
 }

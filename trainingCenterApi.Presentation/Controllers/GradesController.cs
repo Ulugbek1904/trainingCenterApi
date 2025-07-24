@@ -1,96 +1,88 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using trainingCenter.Common.Exceptions;
 using trainingCenter.Domain.Models;
 using trainingCenter.Domain.Models.DTOs;
 using trainingCenter.Services.Foundation.Interfaces;
 using ArgumentException = trainingCenter.Common.Exceptions.ArgumentException;
 
-namespace trainingCenter.Api.Controllers
+namespace trainingCenter.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Admin,Teacher")]
+public class GradesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class GradesController : ControllerBase
+    private readonly IGradeService gradeService;
+    private readonly IMapper mapper;
+    private readonly ICurrentUserService currentUser;
+
+    public GradesController(IGradeService gradeService, IMapper mapper, ICurrentUserService currentUser)
     {
-        private readonly IGradeService gradeService;
-        private readonly IMapper mapper;
+        this.gradeService = gradeService ?? throw new NullArgumentException(nameof(gradeService));
+        this.mapper = mapper ?? throw new NullArgumentException(nameof(mapper));
+        this.currentUser = currentUser ?? throw new NullArgumentException(nameof(currentUser));
+    }
 
-        public GradesController(IGradeService gradeService, IMapper mapper)
+    [HttpPost]
+    public async Task<IActionResult> CreateGrade([FromBody] GradeCreateDto gradeDto)
+    {
+        var grade = mapper.Map<Grade>(gradeDto);
+        grade.TenantId = currentUser.TenantId;
+
+        var created = await gradeService.RegisterGradeAsync(grade);
+        return CreatedAtAction(nameof(GetGradeById), new { id = created.Id }, mapper.Map<GradeDto>(created));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllGrades([FromQuery] int page = 1, [FromQuery] int size = 10)
+    {
+        var grades = await gradeService.RetrieveAllGradesAsync();
+        var filtered = grades.Where(g => g.TenantId == currentUser.TenantId).ToList();
+
+        var paged = filtered.Skip((page - 1) * size).Take(size).ToList();
+        var result = new PagedResult<GradeDto>
         {
-            this.gradeService = gradeService ?? throw new NullArgumentException(nameof(gradeService));
-            this.mapper = mapper ?? throw new NullArgumentException(nameof(mapper));
-        }
+            Items = mapper.Map<List<GradeDto>>(paged),
+            TotalCount = filtered.Count,
+            PageNumber = page,
+            PageSize = size
+        };
+        return Ok(result);
+    }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateGrade([FromBody] GradeCreateDto gradeDto)
-        {
-            try
-            {
-                var grade = mapper.Map<Grade>(gradeDto);
-                var createdGrade = await gradeService.RegisterGradeAsync(grade);
-                var resultDto = mapper.Map<GradeDto>(createdGrade);
-                return CreatedAtAction(nameof(GetGradeById), new { id = resultDto.Id }, resultDto);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-            catch (NotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetGradeById(Guid id)
+    {
+        var grade = await gradeService.RetrieveGradeByIdAsync(id);
+        if (grade.TenantId != currentUser.TenantId)
+            return Forbid();
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllGrades([FromQuery] int page = 1, [FromQuery] int size = 10)
-        {
-            if (page < 1 || size < 1)
-                return BadRequest("Page and size must be positive.");
+        return Ok(mapper.Map<GradeDto>(grade));
+    }
 
-            var grades = await gradeService.RetrieveAllGradesAsync();
-            var totalCount = grades.Count;
-            var pagedGrades = grades.Skip((page - 1) * size).Take(size).ToList();
-            var resultDtos = mapper.Map<List<GradeDto>>(pagedGrades);
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateGrade(Guid id, [FromBody] GradeUpdateDto gradeDto)
+    {
+        if (id != gradeDto.Id)
+            throw new ArgumentException("ID mismatch.");
 
-            var result = new PagedResult<GradeDto>
-            {
-                Items = resultDtos,
-                TotalCount = totalCount,
-                PageNumber = page,
-                PageSize = size
-            };
+        var grade = mapper.Map<Grade>(gradeDto);
+        grade.TenantId = currentUser.TenantId;
 
-            return Ok(result);
-        }
+        var updated = await gradeService.ModifyGradeAsync(grade);
+        return Ok(mapper.Map<GradeDto>(updated));
+    }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetGradeById(Guid id)
-        {
-            var grade = await gradeService.RetrieveGradeByIdAsync(id);
-            var resultDto = mapper.Map<GradeDto>(grade);
-            return Ok(resultDto);
-        }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteGrade(Guid id)
+    {
+        var grade = await gradeService.RetrieveGradeByIdAsync(id);
+        if (grade.TenantId != currentUser.TenantId)
+            return Forbid();
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGrade(Guid id, [FromBody] GradeUpdateDto gradeDto)
-        {
-            if (id != gradeDto.Id)
-                throw new ArgumentException("ID mismatch.");
-
-            var grade = mapper.Map<Grade>(gradeDto);
-            var updatedGrade = await gradeService.ModifyGradeAsync(grade);
-            var resultDto = mapper.Map<GradeDto>(updatedGrade);
-            return Ok(resultDto);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGrade(Guid id)
-        {
-            await gradeService.RemoveGradeAsync(id);
-            return NoContent();
-        }
+        await gradeService.RemoveGradeAsync(id);
+        return NoContent();
     }
 }
