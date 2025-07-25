@@ -1,0 +1,6 @@
+services:
+  trainingcenterapi.presentation:
+    image: ${DOCKER_REGISTRY-}trainingcenterapipresentation
+    build:
+      context: .
+      dockerfile: trainingCenterApi.Presentation/Dockerfile
